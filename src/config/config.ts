@@ -15,6 +15,11 @@ const config = {
     password: process.env.DB_PASSWORD || 'postgres'
   },
 
+  redis: {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: parseInt(process.env.REDIS_PORT || '6379', 10)
+  },
+
   mockDex: {
     quoteDelayMs: parseInt(process.env.MOCK_DEX_QUOTE_DELAY_MS || '200', 10),
     executionDelayMs: parseInt(process.env.MOCK_DEX_EXECUTION_DELAY_MS || '2500', 10),

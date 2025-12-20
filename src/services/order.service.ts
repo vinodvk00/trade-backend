@@ -3,6 +3,7 @@ import dexRouter from './dex-router.service';
 import logger from '../utils/logger';
 import { ValidationError, RoutingError, ExecutionError } from '../utils/errors';
 import { Order, OrderStatus } from '../models/types';
+import { addOrderToQueue } from '../queue/order.queue';
 
 export interface CreateOrderRequest {
   userWallet: string;
@@ -36,6 +37,22 @@ class OrderService {
     });
 
     logger.info(`Order created with ID: ${order.id}`, { orderId: order.id });
+
+    return order;
+  }
+
+  async createAndQueueOrder(request: CreateOrderRequest): Promise<Order> {
+    const order = await this.createOrder(request);
+
+    await addOrderToQueue({
+      orderId: order.id,
+      userWallet: order.userWallet,
+      inputToken: order.inputToken,
+      outputToken: order.outputToken,
+      inputAmount: order.inputAmount
+    });
+
+    logger.info(`Order ${order.id} queued for execution`);
 
     return order;
   }

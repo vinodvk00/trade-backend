@@ -62,6 +62,46 @@ export const createOrder = async (
   }
 };
 
+export const createAndExecuteOrder = async (
+  request: FastifyRequest<{ Body: CreateOrderBody }>,
+  reply: FastifyReply
+) => {
+  try {
+    const order = await orderService.createAndQueueOrder(request.body);
+    return reply.status(201).send({
+      success: true,
+      data: {
+        orderId: order.id,
+        status: order.status,
+        message: 'Order queued for execution'
+      }
+    });
+  } catch (error) {
+    if (error instanceof ValidationError) {
+      return reply.status(400).send({
+        success: false,
+        error: error.message
+      });
+    }
+
+    if (error instanceof AppError) {
+      return reply.status(error.statusCode).send({
+        success: false,
+        error: error.message
+      });
+    }
+
+    logger.error('Failed to create and queue order', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+
+    return reply.status(500).send({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+};
+
 export const executeOrder = async (
   request: FastifyRequest<{ Params: ExecuteOrderParams }>,
   reply: FastifyReply

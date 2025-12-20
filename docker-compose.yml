@@ -14,5 +14,14 @@ services:
       - trade_postgres_data:/var/lib/postgresql/data
       - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
 
+  redis:
+    container_name: trade-redis
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - trade_redis_data:/data
+
 volumes:
   trade_postgres_data:
+  trade_redis_data:

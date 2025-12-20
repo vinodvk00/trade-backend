@@ -4,7 +4,9 @@ import cors from '@fastify/cors';
 import config from './config/config';
 import logger from './utils/logger';
 import pool from './database/connection';
+import redisConnection from './queue/connection';
 import { registerOrderRoutes } from './api/order.routes';
+import './queue/order.worker';
 
 const buildApp = async () => {
   const app = Fastify({
@@ -17,9 +19,10 @@ const buildApp = async () => {
   app.get('/health', async () => {
     try {
       await pool.query('SELECT 1');
-      return { status: 'ok', database: 'connected' };
+      await redisConnection.ping();
+      return { status: 'ok', database: 'connected', redis: 'connected' };
     } catch (_error) {
-      return { status: 'degraded', database: 'disconnected' };
+      return { status: 'degraded', database: 'disconnected', redis: 'disconnected' };
     }
   });
 
