@@ -13,6 +13,12 @@ const config = {
     name: process.env.DB_NAME || 'order_execution',
     user: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres'
+  },
+
+  mockDex: {
+    quoteDelayMs: parseInt(process.env.MOCK_DEX_QUOTE_DELAY_MS || '200', 10),
+    executionDelayMs: parseInt(process.env.MOCK_DEX_EXECUTION_DELAY_MS || '2500', 10),
+    failureRate: parseFloat(process.env.MOCK_DEX_FAILURE_RATE || '0.05')
   }
 };
 

@@ -13,5 +13,13 @@ module.exports = {
   moduleFileExtensions: ['ts', 'js', 'json', 'node'],
   verbose: true,
   testTimeout: 10000,
-  setupFilesAfterEnv: ['<rootDir>/tests/setup.ts']
+  setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
+  transform: {
+    '^.+\\.ts$': ['ts-jest', {
+      useESM: false
+    }]
+  },
+  transformIgnorePatterns: [
+    'node_modules/(?!uuid)'
+  ]
 };

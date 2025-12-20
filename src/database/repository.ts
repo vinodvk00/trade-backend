@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { v7 as uuidv7 } from 'uuid';
 import { query } from './connection';
 import { Order, OrderStatus } from '../models/types';
 
@@ -9,7 +9,7 @@ export class OrderRepository {
     outputToken: string;
     inputAmount: number;
   }): Promise<Order> {
-    const id = uuidv4();
+    const id = uuidv7();
     const sql = `
       INSERT INTO orders (id, user_wallet, input_token, output_token, input_amount, status)
       VALUES ($1, $2, $3, $4, $5, $6)

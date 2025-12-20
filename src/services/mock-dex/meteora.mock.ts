@@ -1,0 +1,96 @@
+import config from '../../config/config';
+import logger from '../../utils/logger';
+
+export interface DEXQuote {
+  dex: string;
+  inputToken: string;
+  outputToken: string;
+  inputAmount: number;
+  outputAmount: number;
+  price: number;
+  fee: number;
+}
+
+export interface DEXExecutionResult {
+  txHash: string;
+  executedPrice: number;
+  executedAmount: number;
+  actualSlippage: number;
+}
+
+class MeteoraMock {
+  private readonly fee = 0.002;
+
+  async getQuote(inputToken: string, outputToken: string, inputAmount: number): Promise<DEXQuote> {
+    await this.sleep(config.mockDex?.quoteDelayMs || 200);
+
+    const basePrice = 1.0;
+    const priceVariation = 0.97 + Math.random() * 0.05;
+    const price = basePrice * priceVariation;
+
+    const outputAmount = inputAmount * price * (1 - this.fee);
+
+    logger.info('Meteora quote fetched', {
+      inputToken,
+      outputToken,
+      inputAmount,
+      outputAmount: outputAmount.toFixed(4),
+      price: price.toFixed(4),
+      fee: this.fee
+    });
+
+    return {
+      dex: 'Meteora',
+      inputToken,
+      outputToken,
+      inputAmount,
+      outputAmount,
+      price,
+      fee: this.fee
+    };
+  }
+
+  async executeSwap(quote: DEXQuote): Promise<DEXExecutionResult> {
+    await this.sleep(config.mockDex?.executionDelayMs || 2500);
+
+    if (Math.random() < (config.mockDex?.failureRate || 0.05)) {
+      throw new Error('Meteora: Simulated swap execution failure');
+    }
+
+    const slippageFactor = 0.99 + Math.random() * 0.02;
+    const executedPrice = quote.price * slippageFactor;
+    const executedAmount = quote.outputAmount * slippageFactor;
+    const actualSlippage = Math.abs(1 - slippageFactor) * 100;
+
+    const txHash = this.generateMockTxHash();
+
+    logger.info('Meteora swap executed', {
+      txHash,
+      executedPrice: executedPrice.toFixed(4),
+      executedAmount: executedAmount.toFixed(4),
+      actualSlippage: actualSlippage.toFixed(2) + '%'
+    });
+
+    return {
+      txHash,
+      executedPrice,
+      executedAmount,
+      actualSlippage
+    };
+  }
+
+  private generateMockTxHash(): string {
+    const chars = '0123456789abcdef';
+    let hash = '';
+    for (let i = 0; i < 64; i++) {
+      hash += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return hash;
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+}
+
+export default new MeteoraMock();
