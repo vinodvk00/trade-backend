@@ -74,9 +74,9 @@ export class OrderRepository {
     return result.rows[0] ? this.mapToOrder(result.rows[0]) : null;
   }
 
-  async findByUserWallet(userWallet: string): Promise<Order[]> {
-    const sql = 'SELECT * FROM orders WHERE user_wallet = $1 ORDER BY created_at DESC';
-    const result = await query(sql, [userWallet]);
+  async findByUserWallet(userWallet: string, limit = 50): Promise<Order[]> {
+    const sql = 'SELECT * FROM orders WHERE user_wallet = $1 ORDER BY created_at DESC LIMIT $2';
+    const result = await query(sql, [userWallet, limit]);
 
     return result.rows.map(row => this.mapToOrder(row));
   }

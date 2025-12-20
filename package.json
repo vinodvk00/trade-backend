@@ -11,6 +11,7 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:db": "ts-node scripts/test-db.ts",
+    "test:order": "ts-node scripts/test-order-flow.ts",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\"",

@@ -4,6 +4,7 @@ import cors from '@fastify/cors';
 import config from './config/config';
 import logger from './utils/logger';
 import pool from './database/connection';
+import { registerOrderRoutes } from './api/order.routes';
 
 const buildApp = async () => {
   const app = Fastify({
@@ -21,6 +22,8 @@ const buildApp = async () => {
       return { status: 'degraded', database: 'disconnected' };
     }
   });
+
+  await registerOrderRoutes(app);
 
   return app;
 };
