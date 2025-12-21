@@ -63,9 +63,7 @@ describe('Order Service', () => {
       };
 
       await expect(orderService.createOrder(request)).rejects.toThrow(ValidationError);
-      await expect(orderService.createOrder(request)).rejects.toThrow(
-        'userWallet is required and must be a string'
-      );
+      await expect(orderService.createOrder(request)).rejects.toThrow('userWallet is required');
     });
 
     it('should throw ValidationError for negative inputAmount', async () => {
@@ -221,9 +219,7 @@ describe('Order Service', () => {
       mockRepository.findById.mockResolvedValue(mockOrder);
 
       await expect(orderService.executeOrder(orderId)).rejects.toThrow(ValidationError);
-      await expect(orderService.executeOrder(orderId)).rejects.toThrow(
-        'is not in pending status'
-      );
+      await expect(orderService.executeOrder(orderId)).rejects.toThrow('is not in pending status');
     });
 
     it('should handle routing error and update order to failed', async () => {
@@ -293,9 +289,7 @@ describe('Order Service', () => {
       mockRepository.findById.mockResolvedValue(mockOrder);
       mockRepository.updateStatus.mockResolvedValue(mockOrder);
       (dexRouter.getBestQuote as jest.Mock).mockResolvedValue(mockQuote);
-      (dexRouter.executeSwap as jest.Mock).mockRejectedValue(
-        new Error('Swap execution failed')
-      );
+      (dexRouter.executeSwap as jest.Mock).mockRejectedValue(new Error('Swap execution failed'));
 
       await expect(orderService.executeOrder(orderId)).rejects.toThrow(ExecutionError);
 

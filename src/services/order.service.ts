@@ -5,6 +5,7 @@ import { ValidationError, RoutingError, ExecutionError } from '../utils/errors';
 import { Order, OrderStatus } from '../models/types';
 import { addOrderToQueue } from '../queue/order.queue';
 import { orderEvents } from '../queue/order.events';
+import { validateWalletAddress } from '../utils/validation';
 
 export interface CreateOrderRequest {
   userWallet: string;
@@ -148,13 +149,12 @@ class OrderService {
   }
 
   async getUserOrders(userWallet: string, limit = 50): Promise<Order[]> {
+    validateWalletAddress(userWallet, 'userWallet');
     return await this.repository.findByUserWallet(userWallet, limit);
   }
 
   private validateOrderRequest(request: CreateOrderRequest): void {
-    if (!request.userWallet || typeof request.userWallet !== 'string') {
-      throw new ValidationError('userWallet is required and must be a string');
-    }
+    validateWalletAddress(request.userWallet, 'userWallet');
 
     if (!request.inputToken || typeof request.inputToken !== 'string') {
       throw new ValidationError('inputToken is required and must be a string');

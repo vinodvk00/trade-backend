@@ -192,6 +192,13 @@ export const getUserOrders = async (
       count: orders.length
     });
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return reply.status(400).send({
+        success: false,
+        error: error.message
+      });
+    }
+
     logger.error('Failed to get user orders', {
       wallet: request.params.wallet,
       error: error instanceof Error ? error.message : 'Unknown error'

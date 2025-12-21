@@ -3,6 +3,7 @@ import { WebSocket } from 'ws';
 import { orderEvents, OrderStatusUpdate } from '../queue/order.events';
 import orderService from '../services/order.service';
 import logger from '../utils/logger';
+import { OrderStatus } from '../models/types';
 
 interface OrderStatusParams {
   orderId: string;
@@ -68,7 +69,7 @@ export const handleOrderStatusWebSocket = async (
           status: update.status
         });
 
-        if (update.status === 'confirmed' || update.status === 'failed') {
+        if (update.status === OrderStatus.CONFIRMED || update.status === OrderStatus.FAILED) {
           logger.info(`Order ${orderId} reached final status, closing WebSocket`, {
             orderId,
             status: update.status
