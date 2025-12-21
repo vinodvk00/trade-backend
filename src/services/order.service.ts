@@ -4,6 +4,7 @@ import logger from '../utils/logger';
 import { ValidationError, RoutingError, ExecutionError } from '../utils/errors';
 import { Order, OrderStatus } from '../models/types';
 import { addOrderToQueue } from '../queue/order.queue';
+import { orderEvents } from '../queue/order.events';
 
 export interface CreateOrderRequest {
   userWallet: string;
@@ -53,6 +54,12 @@ class OrderService {
     });
 
     logger.info(`Order ${order.id} queued for execution`);
+
+    orderEvents.emitStatusUpdate({
+      orderId: order.id,
+      status: OrderStatus.PENDING,
+      timestamp: new Date()
+    });
 
     return order;
   }

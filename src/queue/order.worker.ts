@@ -5,6 +5,7 @@ import dexRouter from '../services/dex-router.service';
 import { OrderRepository } from '../database/repository';
 import { OrderStatus } from '../models/types';
 import logger from '../utils/logger';
+import { orderEvents } from './order.events';
 
 const repository = new OrderRepository();
 
@@ -20,6 +21,11 @@ const processOrder = async (job: Job<OrderJobData>) => {
   try {
     await repository.updateStatus(orderId, OrderStatus.ROUTING);
     logger.info(`Order ${orderId} status: ROUTING`);
+    orderEvents.emitStatusUpdate({
+      orderId,
+      status: OrderStatus.ROUTING,
+      timestamp: new Date()
+    });
 
     const bestQuote = await dexRouter.getBestQuote(inputToken, outputToken, inputAmount);
 
@@ -31,9 +37,19 @@ const processOrder = async (job: Job<OrderJobData>) => {
 
     await repository.updateStatus(orderId, OrderStatus.BUILDING);
     logger.info(`Order ${orderId} status: BUILDING`);
+    orderEvents.emitStatusUpdate({
+      orderId,
+      status: OrderStatus.BUILDING,
+      timestamp: new Date()
+    });
 
     await repository.updateStatus(orderId, OrderStatus.SUBMITTED);
     logger.info(`Order ${orderId} status: SUBMITTED`);
+    orderEvents.emitStatusUpdate({
+      orderId,
+      status: OrderStatus.SUBMITTED,
+      timestamp: new Date()
+    });
 
     const executionResult = await dexRouter.executeSwap(bestQuote.selectedQuote);
 
@@ -51,6 +67,16 @@ const processOrder = async (job: Job<OrderJobData>) => {
     });
 
     logger.info(`Order ${orderId} confirmed`, { txHash: executionResult.txHash });
+    orderEvents.emitStatusUpdate({
+      orderId,
+      status: OrderStatus.CONFIRMED,
+      timestamp: new Date(),
+      data: {
+        selectedDex: bestQuote.selectedQuote.dex,
+        outputAmount: executionResult.executedAmount,
+        txHash: executionResult.txHash
+      }
+    });
 
     return {
       orderId,
@@ -70,6 +96,14 @@ const processOrder = async (job: Job<OrderJobData>) => {
       await repository.updateStatus(orderId, OrderStatus.FAILED, errorMessage);
       logger.error(`Order ${orderId} permanently failed after 3 attempts`, {
         error: errorMessage
+      });
+      orderEvents.emitStatusUpdate({
+        orderId,
+        status: OrderStatus.FAILED,
+        timestamp: new Date(),
+        data: {
+          error: errorMessage
+        }
       });
     }
 
