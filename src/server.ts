@@ -5,8 +5,8 @@ import config from './config/config';
 import logger from './utils/logger';
 import pool from './database/connection';
 import redisConnection from './queue/connection';
-import { registerOrderRoutes } from './api/order.routes';
-import { registerWebSocketRoutes } from './api/websocket.routes';
+import { registerOrderRoutes } from './api/routes/order.routes';
+import { registerWebSocketRoutes } from './api/routes/websocket.routes';
 import { orderWorker } from './queue/order.worker';
 import { orderEvents } from './queue/order.events';
 

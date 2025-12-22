@@ -11,6 +11,10 @@ describe('WebSocket Event System', () => {
     orderEvents.removeAllListeners();
   });
 
+  afterAll(() => {
+    orderEvents.removeAllListeners();
+  });
+
   describe('OrderEventEmitter', () => {
     it('should emit status updates to specific order listeners', done => {
       const orderId = 'test-order-123';

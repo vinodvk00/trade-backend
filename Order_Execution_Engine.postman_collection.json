@@ -1,0 +1,205 @@
+{
+	"info": {
+		"_postman_id": "41bdf761-62ad-4cfa-9fcb-03ef82cba67d",
+		"name": "trade",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "43686079"
+	},
+	"item": [
+		{
+			"name": "order",
+			"item": [
+				{
+					"name": "create",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 201\", () => {\r",
+									"    pm.response.to.have.status(201);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Save orderId\", () => {\r",
+									"    const json = pm.response.json();\r",
+									"    pm.environment.set(\"orderId\", json.data.id);\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"userWallet\": \"test\",\r\n    \"inputToken\": \"SOL\",\r\n    \"outputToken\": \"USDC\",\r\n    \"inputAmount\": 10\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/orders",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"orders"
+							]
+						},
+						"description": "## Overview\n\nThis endpoint creates a new trade order in the trading system. It initiates a token swap transaction between two specified tokens.\n\n## Request Body Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| `userWallet` | string | Yes | The wallet address of the user placing the order |\n| `inputToken` | string | Yes | The token symbol being traded from (e.g., \"SOL\") |\n| `outputToken` | string | Yes | The token symbol being traded to (e.g., \"USDC\") |\n| `inputAmount` | number | Yes | The amount of input token to trade |\n\n## Example Request Body\n\n``` json\n{\n  \"userWallet\": \"your-wallet-address\",\n  \"inputToken\": \"SOL\",\n  \"outputToken\": \"USDC\",\n  \"inputAmount\": 10\n}\n\n ```\n\n## Response\n\n**Status Code:** `201 Created`\n\nThe response contains the created order object with the following fields:\n\n| Field | Type | Description |\n| --- | --- | --- |\n| `success` | boolean | Indicates if the request was successful |\n| `data.id` | string | Unique identifier for the order (UUID format) |\n| `data.userWallet` | string | The wallet address that placed the order |\n| `data.inputToken` | string | The token being traded from |\n| `data.outputToken` | string | The token being traded to |\n| `data.inputAmount` | number | The amount of input token |\n| `data.selectedDex` | string/null | The decentralized exchange selected for the trade |\n| `data.status` | string | Current status of the order (e.g., \"pending\") |\n| `data.txHash` | string/null | Transaction hash once executed |\n| `data.error` | string/null | Error message if the order failed |\n| `data.createdAt` | string | ISO 8601 timestamp of order creation |\n| `data.updatedAt` | string | ISO 8601 timestamp of last update |\n\n## Example Response\n\n``` json\n{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"019b452f-1961-7344-aaf8-e9d37127bf89\",\n    \"userWallet\": \"test\",\n    \"inputToken\": \"SOL\",\n    \"outputToken\": \"USDC\",\n    \"inputAmount\": 10,\n    \"selectedDex\": null,\n    \"status\": \"pending\",\n    \"txHash\": null,\n    \"error\": null,\n    \"createdAt\": \"2025-12-22T03:01:13.250Z\",\n    \"updatedAt\": \"2025-12-22T03:01:13.250Z\"\n  }\n}\n\n ```\n\n## Post-Response Actions\n\nThis request automatically saves the order ID from the response to the environment variable `orderId` for use in subsequent requests (e.g., checking order status or executing the trade)."
+					},
+					"response": []
+				},
+				{
+					"name": "execute",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 201\", () => {\r",
+									"    pm.response.to.have.status(201);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Returns orderId\", () => {\r",
+									"    const json = pm.response.json();\r",
+									"    pm.expect(json.data.orderId).to.exist;\r",
+									"    pm.environment.set(\"orderId\", json.data.orderId);\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/orders/{{orderId}}/execute",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"orders",
+								"{{orderId}}",
+								"execute"
+							]
+						},
+						"description": "# Execute Order\n\n## Overview\n\nThis endpoint executes a previously created order on the trading platform. It processes the order through the selected decentralized exchange (DEX) and returns the execution details including transaction hash and confirmation status.\n\n## Endpoint Details\n\n- **Method:** `POST`\n    \n- **URL:** `{{base_url}}/api/orders/{{orderId}}/execute`\n    \n\n## Path Variables\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| `orderId` | string | Yes | The unique identifier of the order to execute. This ID is typically obtained when creating an order. |\n\n## Expected Response\n\n### Success Response (200 OK)\n\n``` json\n{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"019b452f-1961-7344-aaf8-e9d37127bf89\",\n    \"userWallet\": \"test\",\n    \"inputToken\": \"SOL\",\n    \"outputToken\": \"USDC\",\n    \"inputAmount\": 10,\n    \"outputAmount\": 10.23436072,\n    \"selectedDex\": \"Raydium\",\n    \"status\": \"confirmed\",\n    \"txHash\": \"13b916f949a4bc3d5f3a263325531a995bf294be...\",\n    \"error\": null,\n    \"createdAt\": \"2025-12-22T03:01:13.250Z\",\n    \"updatedAt\": \"2025-12-22T03:01:39.795Z\"\n  }\n}\n\n ```\n\n## Response Fields\n\n| Field | Type | Description |\n| --- | --- | --- |\n| `success` | boolean | Indicates whether the request was successful |\n| `data.id` | string | Unique identifier for the executed order |\n| `data.userWallet` | string | The wallet address of the user executing the order |\n| `data.inputToken` | string | The token being traded from (e.g., SOL) |\n| `data.outputToken` | string | The token being traded to (e.g., USDC) |\n| `data.inputAmount` | number | The amount of input token being traded |\n| `data.outputAmount` | number | The amount of output token received |\n| `data.selectedDex` | string | The decentralized exchange used for execution (e.g., Raydium) |\n| `data.status` | string | Current status of the order (e.g., confirmed, pending, failed) |\n| `data.txHash` | string | The blockchain transaction hash for verification |\n| `data.error` | string/null | Error message if execution failed, null if successful |\n| `data.createdAt` | string | ISO 8601 timestamp when the order was created |\n| `data.updatedAt` | string | ISO 8601 timestamp when the order was last updated |\n\n## Example Usage\n\n1. First, create an order using the order creation endpoint to obtain an `orderId`\n    \n2. Store the `orderId` in an environment variable or use it directly in the path\n    \n3. Execute this endpoint to process the order on the blockchain\n    \n4. Use the returned `txHash` to verify the transaction on the blockchain explorer\n    \n5. Check the `status` field to confirm successful execution\n    \n\n## Notes\n\n- Ensure the order exists and is in a valid state before attempting execution\n    \n- The `txHash` can be used to track the transaction on the blockchain\n    \n- The `outputAmount` may vary slightly from estimates due to slippage and market conditions\n    \n- Monitor the `status` field to track order execution progress"
+					},
+					"response": []
+				},
+				{
+					"name": "getbyID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", () => {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Has order data\", () => {\r",
+									"    const json = pm.response.json();\r",
+									"    pm.expect(json.data.status).to.exist;\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/orders/{{orderId}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"orders",
+								"{{orderId}}"
+							]
+						},
+						"description": "# Get Order by ID\n\n## Overview\n\nRetrieves detailed information about a specific order using its unique identifier. This endpoint allows you to track the status, parameters, and execution details of a trade order.\n\n## Request Details\n\n**Method:** `GET`\n\n**URL Pattern:** `{{base_url}}/api/orders/{{orderId}}`\n\n### Path Variables\n\n| Variable | Type | Required | Description |\n| --- | --- | --- | --- |\n| `orderId` | string | Yes | The unique identifier of the order to retrieve |\n\n## Response Format\n\nThe endpoint returns a JSON object with the following structure:\n\n``` json\n{\n  \"success\": boolean,\n  \"data\": {\n    \"id\": \"string\",\n    \"userWallet\": \"string\",\n    \"inputToken\": \"string\",\n    \"outputToken\": \"string\",\n    \"inputAmount\": number,\n    \"selectedDex\": \"string | null\",\n    \"status\": \"string\",\n    \"txHash\": \"string | null\",\n    \"error\": \"string | null\",\n    \"createdAt\": \"string (ISO 8601)\",\n    \"updatedAt\": \"string (ISO 8601)\"\n  }\n}\n\n ```\n\n### Response Fields\n\n- **success**: Indicates whether the request was successful\n    \n- **data.id**: Unique order identifier\n    \n- **data.userWallet**: Wallet address associated with the order\n    \n- **data.inputToken**: Token being traded from (e.g., \"SOL\")\n    \n- **data.outputToken**: Token being traded to (e.g., \"USDC\")\n    \n- **data.inputAmount**: Amount of input token to trade\n    \n- **data.selectedDex**: The decentralized exchange used (null if not yet selected)\n    \n- **data.status**: Current order status (e.g., \"pending\", \"completed\", \"failed\")\n    \n- **data.txHash**: Transaction hash once executed (null if pending)\n    \n- **data.error**: Error message if the order failed (null if successful)\n    \n- **data.createdAt**: Timestamp when the order was created\n    \n- **data.updatedAt**: Timestamp when the order was last updated\n    \n\n## Example Response\n\n``` json\n{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"019b452f-1961-7344-aaf8-e9d37127bf89\",\n    \"userWallet\": \"test\",\n    \"inputToken\": \"SOL\",\n    \"outputToken\": \"USDC\",\n    \"inputAmount\": 10,\n    \"selectedDex\": null,\n    \"status\": \"pending\",\n    \"txHash\": null,\n    \"error\": null,\n    \"createdAt\": \"2025-12-22T03:01:13.250Z\",\n    \"updatedAt\": \"2025-12-22T03:01:13.250Z\"\n  }\n}\n\n ```\n\n## Use Cases\n\n1. **Order Status Tracking**: Check the current status of a trade order to see if it's pending, completed, or failed\n    \n2. **Transaction Verification**: Retrieve the transaction hash once an order is executed on-chain\n    \n3. **Order History**: Fetch historical order details for record-keeping or auditing purposes\n    \n4. **Error Debugging**: Check the error field to understand why an order may have failed\n    \n\n## Notes\n\n- The `orderId` must be a valid UUID that exists in the system\n    \n- Orders in \"pending\" status will have `null` values for `txHash` and `selectedDex`\n    \n- The `status` field is key for determining the order's current state in the execution pipeline\n    \n- Timestamps are returned in ISO 8601 format with timezone information"
+					},
+					"response": []
+				},
+				{
+					"name": "user-orders",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/orders/user/:wallet",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"orders",
+								"user",
+								":wallet"
+							],
+							"variable": [
+								{
+									"key": "wallet",
+									"value": "your-wallet-address"
+								}
+							]
+						},
+						"description": "# Get User Order History\n\n## Overview\n\nRetrieves the complete order history for a specific user wallet address. This endpoint returns all swap orders associated with the provided wallet, including their current status, transaction details, and token exchange information.\n\n## Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| `wallet` | string | Yes | The user's wallet address to retrieve orders for |\n\n## Response Structure\n\nThe endpoint returns a JSON object with the following structure:\n\n``` json\n{\n  \"success\": boolean,\n  \"data\": [\n    {\n      \"id\": \"string\",\n      \"userWallet\": \"string\",\n      \"inputToken\": \"string\",\n      \"outputToken\": \"string\",\n      \"inputAmount\": number,\n      \"outputAmount\": number,\n      \"selectedDex\": \"string | null\",\n      \"status\": \"string\",\n      \"txHash\": \"string | null\",\n      \"error\": \"string | null\",\n      \"createdAt\": \"string (ISO 8601)\",\n      \"updatedAt\": \"string (ISO 8601)\"\n    }\n  ],\n  \"count\": number\n}\n\n ```\n\n### Response Fields\n\n- **success**: Indicates if the request was successful\n    \n- **data**: Array of order objects\n    \n- **count**: Total number of orders returned\n    \n\n### Order Object Fields\n\n- **id**: Unique identifier for the order (UUID format)\n    \n- **userWallet**: The wallet address that created the order\n    \n- **inputToken**: Token being swapped from (e.g., \"SOL\")\n    \n- **outputToken**: Token being swapped to (e.g., \"USDC\")\n    \n- **inputAmount**: Amount of input token\n    \n- **outputAmount**: Amount of output token received/expected\n    \n- **selectedDex**: The decentralized exchange used for the swap (e.g., \"Raydium\"), null if not yet selected\n    \n- **status**: Current status of the order (see Order Statuses below)\n    \n- **txHash**: Blockchain transaction hash, null if transaction not yet submitted\n    \n- **error**: Error message if order failed, null otherwise\n    \n- **createdAt**: Timestamp when the order was created\n    \n- **updatedAt**: Timestamp when the order was last updated\n    \n\n## Order Statuses\n\n| Status | Description |\n| --- | --- |\n| `pending` | Order has been created but not yet executed |\n| `confirmed` | Order has been successfully executed and confirmed on-chain |\n\n## Example Use Case\n\nA user wants to view their trading history to track all token swaps they've made. By calling this endpoint with their wallet address, they can retrieve a chronological list of all their orders, check which ones are still pending, review confirmed transactions with their transaction hashes, and see the exact amounts exchanged for each trade.\n\n**Example Request:**\n\n```\nGET {{base_url}}/api/orders/user/your-wallet-address\n\n ```\n\nThis is useful for portfolio tracking, tax reporting, or verifying that recent trades have been successfully processed."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "health",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 200\", () => {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/health",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"health"
+					]
+				},
+				"description": "# Health Check Endpoint\n\n## Purpose\n\nThis endpoint provides a health check for the application, allowing you to verify that the system and its critical dependencies are operational.\n\n## What It Does\n\nThe health check endpoint performs the following checks:\n\n- Verifies the application is running and responsive\n    \n- Tests database connectivity\n    \n- Tests Redis cache connectivity\n    \n\nThis is a lightweight endpoint designed for frequent polling without impacting system performance.\n\n## Expected Response\n\n### Success Response (200 OK)\n\nWhen all systems are operational, the endpoint returns a `200 OK` status with the following JSON response:\n\n``` json\n{\n  \"status\": \"ok\",\n  \"database\": \"connected\",\n  \"redis\": \"connected\"\n}\n\n ```\n\n### Response Fields\n\n| Field | Type | Description |\n| --- | --- | --- |\n| `status` | string | Overall health status of the application. Returns `\"ok\"` when all systems are healthy. |\n| `database` | string | Database connectivity status. Returns `\"connected\"` when the database connection is active and responsive. |\n| `redis` | string | Redis cache connectivity status. Returns `\"connected\"` when Redis is accessible and operational. |"
+			},
+			"response": []
+		}
+	]
+}

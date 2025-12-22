@@ -2,6 +2,13 @@
 
 Concurrent order execution system with DEX routing, queue-based processing, and WebSocket status updates.
 
+## Live Demo
+
+**Deployed:** https://trade.beyondlocalhost.space
+**Health Check:** https://trade.beyondlocalhost.space/health
+
+**Demo Video:** [Watch on YouTube](#) _(todo)_
+
 ## Prerequisites
 
 - Node.js 18+
@@ -25,15 +32,9 @@ npm run dev
 
 ## Architecture
 
-```
-HTTP Request → API Layer → Service Layer → Queue (BullMQ)
-                               ↓
-                         Database (PostgreSQL)
-                               ↓
-                         Worker Process → DEX Router → Mock DEX APIs
-                               ↓
-                         WebSocket Updates
-```
+![System Architecture](./docs/architecture.png)
+
+The diagram above shows the complete order execution flow from HTTP request to WebSocket status updates, including concurrent processing, DEX routing, and database state management.
 
 ### Components
 
@@ -44,6 +45,42 @@ HTTP Request → API Layer → Service Layer → Queue (BullMQ)
 **WebSocket**: Real-time order status updates. Reduces polling overhead and provides immediate feedback during order execution.
 
 **Mock DEX**: Simulates Raydium and Meteora DEX behavior with configurable delays and failure rates for testing.
+
+## Project Structure
+
+```
+src/
+├── api/          # HTTP and WebSocket endpoints
+├── config/       # Environment configuration and validation
+├── database/     # PostgreSQL connection and repository pattern
+├── models/       # TypeScript types and enums
+├── queue/        # BullMQ setup, worker process, and event emitter
+├── services/     # Business logic (order execution, DEX routing, mocks)
+├── utils/        # Logging, error handling, validation
+└── server.ts     # Application entry point
+
+scripts/          # Database migrations
+tests/            # Unit tests (63 tests, 93%+ coverage)
+```
+
+**Design Patterns:**
+- Layered architecture (API → Service → Repository)
+- Event-driven (EventEmitter for WebSocket updates)
+- Repository pattern (database abstraction)
+
+## Why Market Orders?
+
+I picked market orders because they execute immediately at whatever price is available. This makes them perfect for showing off the core engine—DEX routing, real-time WebSocket updates, and concurrent processing—without getting bogged down in price monitoring logic.
+
+### What about Limit and Sniper orders?
+
+The engine's already set up to handle them with minor additions:
+
+**Limit Orders**: Add a price watcher that checks DEX prices every few blocks. When the target price hits, just call the existing `executeOrder()` flow. Store pending limits in the database with a `target_price` field and poll them in a separate worker.
+
+**Sniper Orders**: Hook into Raydium/Meteora's new pool events. When a matching token launches, trigger execution with priority queue processing. Same execution flow, just different entry point—listen for pool creation instead of HTTP requests.
+
+Both reuse the same routing, execution, and WebSocket infrastructure. The architecture doesn't need to change, just add the price/event monitoring layer on top.
 
 ## API Reference
 
@@ -123,6 +160,21 @@ npm run test:ws           # WebSocket updates
 ```
 
 **Coverage**: 63 tests, 93%+ coverage on core services (order.service, dex-router, repository).
+
+### Postman Collection
+
+Included: 5 endpoints with automated test scripts that save `orderId` from order creation and reuse it across requests.
+
+**Quick Access:** [Open in Postman](https://test22-1477.postman.co/workspace/My-Workspace~dc8f91eb-7d49-4e2d-8e16-c883d4fc89f6/collection/43686079-41bdf761-62ad-4cfa-9fcb-03ef82cba67d?action=share&source=copy-link&creator=43686079)
+
+**Endpoints:**
+- Create Order - `POST /api/orders`
+- Execute Order - `POST /api/orders/execute`
+- Get Order by ID - `GET /api/orders/:orderId`
+- Get User Orders - `GET /api/orders/user/:wallet`
+- Health Check - `GET /health`
+
+Import `Order_Execution_Engine.postman_collection.json` from the repo root.
 
 ## Technical Notes
 
