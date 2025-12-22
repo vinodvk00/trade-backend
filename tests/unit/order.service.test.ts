@@ -175,7 +175,7 @@ describe('Order Service', () => {
         txHash: '0xabc123'
       };
 
-      mockRepository.findById.mockResolvedValue(mockOrder);
+      mockRepository.updateStatusIfMatches.mockResolvedValue(mockOrder);
       mockRepository.updateStatus.mockResolvedValue(mockOrder);
       mockRepository.updateExecution.mockResolvedValue(mockConfirmedOrder);
       (dexRouter.getBestQuote as jest.Mock).mockResolvedValue(mockQuote);
@@ -188,13 +188,18 @@ describe('Order Service', () => {
       expect(result.outputAmount).toBe(99.5);
       expect(result.selectedDex).toBe('Raydium');
 
-      expect(mockRepository.updateStatus).toHaveBeenCalledWith(orderId, OrderStatus.ROUTING);
+      expect(mockRepository.updateStatusIfMatches).toHaveBeenCalledWith(
+        orderId,
+        OrderStatus.PENDING,
+        OrderStatus.ROUTING
+      );
       expect(mockRepository.updateStatus).toHaveBeenCalledWith(orderId, OrderStatus.BUILDING);
       expect(mockRepository.updateStatus).toHaveBeenCalledWith(orderId, OrderStatus.SUBMITTED);
     });
 
     it('should throw ValidationError if order not found', async () => {
       const orderId = 'nonexistent';
+      mockRepository.updateStatusIfMatches.mockResolvedValue(null);
       mockRepository.findById.mockResolvedValue(null);
 
       await expect(orderService.executeOrder(orderId)).rejects.toThrow(ValidationError);
@@ -216,6 +221,7 @@ describe('Order Service', () => {
         updatedAt: new Date()
       };
 
+      mockRepository.updateStatusIfMatches.mockResolvedValue(null);
       mockRepository.findById.mockResolvedValue(mockOrder);
 
       await expect(orderService.executeOrder(orderId)).rejects.toThrow(ValidationError);
@@ -235,7 +241,7 @@ describe('Order Service', () => {
         updatedAt: new Date()
       };
 
-      mockRepository.findById.mockResolvedValue(mockOrder);
+      mockRepository.updateStatusIfMatches.mockResolvedValue(mockOrder);
       mockRepository.updateStatus.mockResolvedValue(mockOrder);
       (dexRouter.getBestQuote as jest.Mock).mockRejectedValue(
         new Error('Failed to get quote from DEX')
@@ -286,7 +292,7 @@ describe('Order Service', () => {
         priceDifferencePercent: 2.04
       };
 
-      mockRepository.findById.mockResolvedValue(mockOrder);
+      mockRepository.updateStatusIfMatches.mockResolvedValue(mockOrder);
       mockRepository.updateStatus.mockResolvedValue(mockOrder);
       (dexRouter.getBestQuote as jest.Mock).mockResolvedValue(mockQuote);
       (dexRouter.executeSwap as jest.Mock).mockRejectedValue(new Error('Swap execution failed'));

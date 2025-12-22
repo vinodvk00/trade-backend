@@ -1,5 +1,6 @@
 import { v7 as uuidv7 } from 'uuid';
-import { query } from './connection';
+import { PoolClient } from 'pg';
+import { query, getClient } from './connection';
 import { Order, OrderStatus } from '../models/types';
 
 export class OrderRepository {
@@ -33,6 +34,56 @@ export class OrderRepository {
     const result = await query(sql, [id]);
 
     return result.rows[0] ? this.mapToOrder(result.rows[0]) : null;
+  }
+
+  async findByIdForUpdate(id: string, client: PoolClient): Promise<Order | null> {
+    const sql = 'SELECT * FROM orders WHERE id = $1 FOR UPDATE';
+    const result = await client.query(sql, [id]);
+
+    return result.rows[0] ? this.mapToOrder(result.rows[0]) : null;
+  }
+
+  async updateStatusIfMatches(
+    id: string,
+    expectedStatus: OrderStatus,
+    newStatus: OrderStatus
+  ): Promise<Order | null> {
+    const client = await getClient();
+
+    try {
+      await client.query('BEGIN');
+
+      const lockSql = 'SELECT * FROM orders WHERE id = $1 FOR UPDATE';
+      const lockResult = await client.query(lockSql, [id]);
+
+      if (!lockResult.rows[0]) {
+        await client.query('ROLLBACK');
+        return null;
+      }
+
+      const order = this.mapToOrder(lockResult.rows[0]);
+
+      if (order.status !== expectedStatus) {
+        await client.query('ROLLBACK');
+        return null;
+      }
+
+      const updateSql = `
+        UPDATE orders
+        SET status = $1, updated_at = NOW()
+        WHERE id = $2
+        RETURNING *
+      `;
+      const updateResult = await client.query(updateSql, [newStatus, id]);
+
+      await client.query('COMMIT');
+      return this.mapToOrder(updateResult.rows[0]);
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   async updateStatus(id: string, status: OrderStatus, error?: string): Promise<Order | null> {

@@ -2,6 +2,34 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+function validateRequiredEnvVars() {
+  const requiredVars = [
+    'DB_HOST',
+    'DB_PORT',
+    'DB_NAME',
+    'DB_USER',
+    'DB_PASSWORD',
+    'REDIS_HOST',
+    'REDIS_PORT'
+  ];
+
+  const missing = requiredVars.filter(varName => !process.env[varName]);
+
+  if (missing.length > 0) {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const message = `Missing required environment variables: ${missing.join(', ')}`;
+
+    if (isProduction) {
+      throw new Error(message);
+    } else {
+      console.warn(`⚠️  WARNING: ${message}`);
+      console.warn('⚠️  Using default values. Set these in .env for production!');
+    }
+  }
+}
+
+validateRequiredEnvVars();
+
 const config = {
   env: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT || '3000', 10),

@@ -68,19 +68,23 @@ class OrderService {
   async executeOrder(orderId: string): Promise<Order> {
     logger.info(`Starting order execution for ${orderId}`);
 
-    const order = await this.repository.findById(orderId);
-    if (!order) {
-      throw new ValidationError(`Order ${orderId} not found`);
-    }
+    const order = await this.repository.updateStatusIfMatches(
+      orderId,
+      OrderStatus.PENDING,
+      OrderStatus.ROUTING
+    );
 
-    if (order.status !== OrderStatus.PENDING) {
+    if (!order) {
+      const existingOrder = await this.repository.findById(orderId);
+      if (!existingOrder) {
+        throw new ValidationError(`Order ${orderId} not found`);
+      }
       throw new ValidationError(
-        `Order ${orderId} is not in pending status (current: ${order.status})`
+        `Order ${orderId} is not in pending status (current: ${existingOrder.status})`
       );
     }
 
     try {
-      await this.repository.updateStatus(orderId, OrderStatus.ROUTING);
       logger.info(`Order ${orderId} status: ROUTING`);
 
       const bestQuote = await dexRouter.getBestQuote(
