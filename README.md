@@ -7,7 +7,7 @@ Concurrent order execution system with DEX routing, queue-based processing, and 
 **Deployed:** https://trade.beyondlocalhost.space
 **Health Check:** https://trade.beyondlocalhost.space/health
 
-**Demo Video:** [Watch on YouTube](#) _(todo)_
+**Demo Video:** [Watch on YouTube](#) _(https://www.youtube.com/watch?v=Sabcy9q-b7s)_
 
 ## Prerequisites
 
@@ -165,7 +165,7 @@ npm run test:ws           # WebSocket updates
 
 Included: 5 endpoints with automated test scripts that save `orderId` from order creation and reuse it across requests.
 
-**Quick Access:** [Open in Postman](https://test22-1477.postman.co/workspace/My-Workspace~dc8f91eb-7d49-4e2d-8e16-c883d4fc89f6/collection/43686079-41bdf761-62ad-4cfa-9fcb-03ef82cba67d?action=share&source=copy-link&creator=43686079)
+**Quick Access:** [Open in Postman](https://test22-1477.postman.co/workspace/demo~6238b386-67a8-4daa-9dae-b3c2b05b6c14/collection/43686079-c58dca9d-bcfd-4128-aee0-5c725cea03ba?action=share&source=copy-link&creator=43686079)
 
 **Endpoints:**
 - Create Order - `POST /api/orders`
