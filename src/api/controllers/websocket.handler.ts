@@ -15,10 +15,6 @@ export const handleOrderStatusWebSocket = async (
 ) => {
   const { orderId } = request.params;
 
-  logger.info(`WebSocket connection established for order ${orderId}`, {
-    orderId
-  });
-
   try {
     const order = await orderService.getOrder(orderId);
 
@@ -49,12 +45,11 @@ export const handleOrderStatusWebSocket = async (
     );
 
     const statusUpdateHandler = (update: OrderStatusUpdate) => {
-      logger.info(`Received status update for order ${orderId}`, {
-        orderId: update.orderId,
-        status: update.status
-      });
-
       try {
+        if (socket.readyState !== WebSocket.OPEN) {
+          return;
+        }
+
         socket.send(
           JSON.stringify({
             type: 'status',
@@ -65,31 +60,21 @@ export const handleOrderStatusWebSocket = async (
           })
         );
 
-        logger.info(`Sent WebSocket message for order ${orderId}`, {
-          status: update.status
-        });
-
         if (update.status === OrderStatus.CONFIRMED || update.status === OrderStatus.FAILED) {
-          logger.info(`Order ${orderId} reached final status, closing WebSocket`, {
-            orderId,
-            status: update.status
-          });
           setTimeout(() => {
             socket.close();
           }, 100);
         }
       } catch (error) {
-        logger.error(`Error sending WebSocket message for order ${orderId}`, {
+        logger.error(`Error sending WebSocket message`, {
           error: error instanceof Error ? error.message : 'Unknown error'
         });
       }
     };
 
-    logger.info(`Registered event listener for order:${orderId}`);
     orderEvents.on(`order:${orderId}`, statusUpdateHandler);
 
     socket.on('close', () => {
-      logger.info(`WebSocket connection closed for order ${orderId}`, { orderId });
       orderEvents.off(`order:${orderId}`, statusUpdateHandler);
     });
 

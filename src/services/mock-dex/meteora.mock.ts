@@ -1,5 +1,4 @@
 import config from '../../config/config';
-import logger from '../../utils/logger';
 
 export interface DEXQuote {
   dex: string;
@@ -30,15 +29,6 @@ class MeteoraMock {
 
     const outputAmount = inputAmount * price * (1 - this.fee);
 
-    logger.info('Meteora quote fetched', {
-      inputToken,
-      outputToken,
-      inputAmount,
-      outputAmount: outputAmount.toFixed(4),
-      price: price.toFixed(4),
-      fee: this.fee
-    });
-
     return {
       dex: 'Meteora',
       inputToken,
@@ -63,13 +53,6 @@ class MeteoraMock {
     const actualSlippage = Math.abs(1 - slippageFactor) * 100;
 
     const txHash = this.generateMockTxHash();
-
-    logger.info('Meteora swap executed', {
-      txHash,
-      executedPrice: executedPrice.toFixed(4),
-      executedAmount: executedAmount.toFixed(4),
-      actualSlippage: actualSlippage.toFixed(2) + '%'
-    });
 
     return {
       txHash,

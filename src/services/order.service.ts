@@ -85,7 +85,11 @@ class OrderService {
     }
 
     try {
-      logger.info(`Order ${orderId} status: ROUTING`);
+      orderEvents.emitStatusUpdate({
+        orderId,
+        status: OrderStatus.ROUTING,
+        timestamp: new Date()
+      });
 
       const bestQuote = await dexRouter.getBestQuote(
         order.inputToken,
@@ -93,25 +97,39 @@ class OrderService {
         order.inputAmount
       );
 
-      logger.info(`Best quote found for order ${orderId}`, {
-        selectedDex: bestQuote.selectedQuote.dex,
-        outputAmount: bestQuote.selectedQuote.outputAmount,
-        priceDifference: bestQuote.priceDifferencePercent
-      });
+      logger.info(
+        `Order ${orderId}: ${bestQuote.selectedQuote.dex} selected (${bestQuote.priceDifferencePercent.toFixed(2)}% better than ${bestQuote.alternativeQuote.dex})`,
+        {
+          selectedDex: bestQuote.selectedQuote.dex,
+          outputAmount: bestQuote.selectedQuote.outputAmount,
+          priceDifference: bestQuote.priceDifferencePercent
+        }
+      );
 
       await this.repository.updateStatus(orderId, OrderStatus.BUILDING);
-      logger.info(`Order ${orderId} status: BUILDING`);
+      orderEvents.emitStatusUpdate({
+        orderId,
+        status: OrderStatus.BUILDING,
+        timestamp: new Date()
+      });
 
       await this.repository.updateStatus(orderId, OrderStatus.SUBMITTED);
-      logger.info(`Order ${orderId} status: SUBMITTED`);
+      orderEvents.emitStatusUpdate({
+        orderId,
+        status: OrderStatus.SUBMITTED,
+        timestamp: new Date()
+      });
 
       const executionResult = await dexRouter.executeSwap(bestQuote.selectedQuote);
 
-      logger.info(`Order ${orderId} executed successfully`, {
-        txHash: executionResult.txHash,
-        executedAmount: executionResult.executedAmount,
-        slippage: executionResult.actualSlippage
-      });
+      logger.info(
+        `Order ${orderId} confirmed: ${executionResult.executedAmount.toFixed(4)} ${order.outputToken} (tx: ${executionResult.txHash.substring(0, 8)}...)`,
+        {
+          txHash: executionResult.txHash,
+          executedAmount: executionResult.executedAmount,
+          slippage: executionResult.actualSlippage
+        }
+      );
 
       const updatedOrder = await this.repository.updateExecution(orderId, {
         selectedDex: bestQuote.selectedQuote.dex,
@@ -124,7 +142,16 @@ class OrderService {
         throw new ExecutionError(`Failed to update order ${orderId} after execution`);
       }
 
-      logger.info(`Order ${orderId} confirmed`, { txHash: executionResult.txHash });
+      orderEvents.emitStatusUpdate({
+        orderId,
+        status: OrderStatus.CONFIRMED,
+        timestamp: new Date(),
+        data: {
+          selectedDex: bestQuote.selectedQuote.dex,
+          outputAmount: executionResult.executedAmount,
+          txHash: executionResult.txHash
+        }
+      });
 
       return updatedOrder;
     } catch (error) {
@@ -140,10 +167,26 @@ class OrderService {
 
       if (errorMessage.includes('quote') || errorMessage.includes('routing')) {
         await this.repository.updateStatus(orderId, OrderStatus.FAILED, errorMessage);
+        orderEvents.emitStatusUpdate({
+          orderId,
+          status: OrderStatus.FAILED,
+          timestamp: new Date(),
+          data: {
+            error: errorMessage
+          }
+        });
         throw new RoutingError(`Failed to route order ${orderId}: ${errorMessage}`);
       }
 
       await this.repository.updateStatus(orderId, OrderStatus.FAILED, errorMessage);
+      orderEvents.emitStatusUpdate({
+        orderId,
+        status: OrderStatus.FAILED,
+        timestamp: new Date(),
+        data: {
+          error: errorMessage
+        }
+      });
       throw new ExecutionError(`Failed to execute order ${orderId}: ${errorMessage}`);
     }
   }
